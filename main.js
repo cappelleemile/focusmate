@@ -14,6 +14,7 @@ let isPomodoroRunning = false;
 let pomodoroTimeLeft = 25 * 60; // 25 minutes in seconds
 let pomodoroInterval;
 let tasks = [];
+let reflection = '';
 
 // OpenAI API Configuration
 const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
@@ -71,6 +72,65 @@ function renderTasks() {
     tasks.forEach((task, index) => {
         tasksContainer.appendChild(createTaskElement(task, index));
     });
+}
+
+// Daily Reflection Functions
+async function generateReflectionSummary() {
+    reflection = dailyReflectionInput.value.trim();
+    if (!reflection) {
+        alert('Please add your reflection first.');
+        return;
+    }
+
+    try {
+        if (!config.OPENAI_API_KEY || config.OPENAI_API_KEY === 'your-api-key-here') {
+            throw new Error('Please add your OpenAI API key to config.js');
+        }
+
+        const response = await fetch(OPENAI_API_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${config.OPENAI_API_KEY}`
+            },
+            body: JSON.stringify({
+                model: "gpt-3.5-turbo",
+                messages: [
+                    {
+                        role: "system",
+                        content: "You are a productivity coach helping to analyze daily reflections and provide insights."
+                    },
+                    {
+                        role: "user",
+                        content: `Analyze this daily reflection and provide: 
+                                1. A summary of achievements
+                                2. Areas for improvement
+                                3. Suggestions for tomorrow
+                                Reflection: ${reflection}`
+                    }
+                ],
+                temperature: 0.7
+            })
+        });
+
+        const data = await response.json();
+        const summary = data.choices[0].message.content;
+
+        // Create a new section to display the summary
+        const summarySection = document.createElement('div');
+        summarySection.className = 'mt-4 p-4 bg-purple-50 rounded-md';
+        summarySection.innerHTML = `
+            <h3 class="font-semibold mb-2">Reflection Analysis:</h3>
+            <p class="whitespace-pre-line">${summary}</p>
+        `;
+
+        // Insert the summary after the reflection section
+        dailyReflectionInput.parentNode.appendChild(summarySection);
+
+    } catch (error) {
+        console.error('Error generating reflection summary:', error);
+        alert('An error occurred while generating the reflection summary. Please try again.');
+    }
 }
 
 // Prioritize tasks using OpenAI
