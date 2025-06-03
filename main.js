@@ -14,7 +14,6 @@ let isPomodoroRunning = false;
 let pomodoroTimeLeft = 25 * 60; // 25 minutes in seconds
 let pomodoroInterval;
 let tasks = [];
-let reflection = '';
 
 // OpenAI API Configuration
 const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
@@ -76,7 +75,7 @@ function renderTasks() {
 
 // Daily Reflection Functions
 async function generateReflectionSummary() {
-    reflection = dailyReflectionInput.value.trim();
+    const reflection = dailyReflectionInput.value.trim();
     if (!reflection) {
         alert('Please add your reflection first.');
         return;
