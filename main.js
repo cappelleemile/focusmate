@@ -6,6 +6,7 @@ const tasksContainer = document.getElementById('tasksContainer');
 const prioritizeTasksButton = document.getElementById('prioritizeTasks');
 const timerDisplay = document.getElementById('timer');
 const startPomodoroButton = document.getElementById('startPomodoro');
+const resetPomodoroButton = document.getElementById('resetPomodoro');
 const dailyReflectionInput = document.getElementById('dailyReflection');
 
 // State
@@ -226,6 +227,14 @@ function updateTimerDisplay() {
     timerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 }
 
+function resetTimer() {
+    clearInterval(pomodoroInterval);
+    isPomodoroRunning = false;
+    pomodoroTimeLeft = 25 * 60;
+    updateTimerDisplay();
+    startPomodoroButton.textContent = 'Start';
+}
+
 function togglePomodoro() {
     if (isPomodoroRunning) {
         clearInterval(pomodoroInterval);
@@ -251,6 +260,7 @@ function togglePomodoro() {
 }
 
 startPomodoroButton.addEventListener('click', togglePomodoro);
+resetPomodoroButton.addEventListener('click', resetTimer);
 
 // Initialize
 updateTimerDisplay(); 
