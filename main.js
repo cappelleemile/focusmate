@@ -2,6 +2,7 @@
 const dailyGoalsInput = document.getElementById('dailyGoals');
 const generatePlanButton = document.getElementById('generatePlan');
 const tasksList = document.getElementById('tasksList');
+const tasksContainer = document.getElementById('tasksContainer');
 const prioritizeTasksButton = document.getElementById('prioritizeTasks');
 const timerDisplay = document.getElementById('timer');
 const startPomodoroButton = document.getElementById('startPomodoro');
@@ -11,9 +12,145 @@ const dailyReflectionInput = document.getElementById('dailyReflection');
 let isPomodoroRunning = false;
 let pomodoroTimeLeft = 25 * 60; // 25 minutes in seconds
 let pomodoroInterval;
+let tasks = [];
 
 // OpenAI API Configuration
 const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
+
+// Task Management Functions
+function createTaskElement(task, index) {
+    const taskElement = document.createElement('div');
+    taskElement.className = 'flex items-center gap-2 p-2 bg-gray-50 rounded-md';
+    
+    const taskText = document.createElement('span');
+    taskText.className = 'flex-1';
+    taskText.textContent = task;
+    
+    const removeButton = document.createElement('button');
+    removeButton.className = 'text-red-500 hover:text-red-700';
+    removeButton.textContent = '×';
+    removeButton.addEventListener('click', () => removeTask(index));
+    
+    taskElement.appendChild(taskText);
+    taskElement.appendChild(removeButton);
+    
+    return taskElement;
+}
+
+function addTask() {
+    const taskInput = tasksList.querySelector('input');
+    const task = taskInput.value.trim();
+    
+    if (task) {
+        // Check for duplicate tasks
+        if (tasks.includes(task)) {
+            alert('This task already exists!');
+            return;
+        }
+        
+        tasks.push(task);
+        taskInput.value = '';
+        renderTasks();
+        
+        // Focus back on input
+        taskInput.focus();
+    }
+}
+
+function removeTask(index) {
+    tasks.splice(index, 1);
+    renderTasks();
+}
+
+function renderTasks() {
+    // Clear the tasks container
+    tasksContainer.innerHTML = '';
+    
+    // Add all tasks
+    tasks.forEach((task, index) => {
+        tasksContainer.appendChild(createTaskElement(task, index));
+    });
+}
+
+// Prioritize tasks using OpenAI
+async function prioritizeTasks() {
+    if (tasks.length < 2) {
+        alert('Please add at least 2 tasks to prioritize them.');
+        return;
+    }
+
+    try {
+        if (!config.OPENAI_API_KEY || config.OPENAI_API_KEY === 'your-api-key-here') {
+            throw new Error('Please add your OpenAI API key to config.js');
+        }
+
+        prioritizeTasksButton.disabled = true;
+        prioritizeTasksButton.textContent = 'Prioritizing...';
+
+        const response = await fetch(OPENAI_API_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${config.OPENAI_API_KEY}`
+            },
+            body: JSON.stringify({
+                model: "gpt-3.5-turbo",
+                messages: [
+                    {
+                        role: "system",
+                        content: "You are a productivity coach helping to prioritize tasks based on importance and urgency."
+                    },
+                    {
+                        role: "user",
+                        content: `Please prioritize these tasks and explain why: ${tasks.join(', ')}`
+                    }
+                ],
+                temperature: 0.7
+            })
+        });
+
+        const data = await response.json();
+        const prioritization = data.choices[0].message.content;
+
+        // Remove any existing prioritization
+        const existingPrioritization = tasksList.parentNode.querySelector('.bg-green-50');
+        if (existingPrioritization) {
+            existingPrioritization.remove();
+        }
+
+        // Create a new section to display the prioritization
+        const prioritizationSection = document.createElement('div');
+        prioritizationSection.className = 'mt-4 p-4 bg-green-50 rounded-md';
+        prioritizationSection.innerHTML = `
+            <h3 class="font-semibold mb-2">Task Prioritization:</h3>
+            <p class="whitespace-pre-line">${prioritization}</p>
+        `;
+
+        // Insert the prioritization after the tasks section
+        tasksList.parentNode.appendChild(prioritizationSection);
+
+    } catch (error) {
+        console.error('Error prioritizing tasks:', error);
+        alert('An error occurred while prioritizing tasks. Please try again.');
+    } finally {
+        prioritizeTasksButton.disabled = false;
+        prioritizeTasksButton.textContent = 'Prioritize Tasks';
+    }
+}
+
+// Event Listeners for Tasks
+const taskInput = tasksList.querySelector('input');
+const addTaskButton = tasksList.querySelector('button');
+
+addTaskButton.addEventListener('click', addTask);
+taskInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        addTask();
+    }
+});
+
+prioritizeTasksButton.addEventListener('click', prioritizeTasks);
 
 // Generate daily plan using OpenAI
 async function generateDailyPlan(goals) {
