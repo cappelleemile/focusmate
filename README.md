@@ -4,7 +4,7 @@ FocusMate is a minimalist AI-powered productivity web application that helps you
 
 ## 🚀 Live Demo
 
-Try FocusMate live: [https://cappelleemile.github.io/focusmate/](https://cappelleemile.github.io/focusmate/)
+Try FocusMate live: <a href="https://cappelleemile.github.io/focusmate/" target="_blank">https://cappelleemile.github.io/focusmate/</a>
 
 ## Features
 
